@@ -4,27 +4,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ForecastPanel } from "./components/ForecastPanel";
 import dynamic from "next/dynamic";
 import { milestones } from "./lib/milestones";
+import type { AgentFeed } from "./lib/agent-types";
 
 const IntelligenceCorridor = dynamic(
   () => import("./components/IntelligenceCorridor").then((module) => module.IntelligenceCorridor),
   { ssr: false },
 );
-
-type FrontierSignal = {
-  title: string;
-  source: string;
-  url: string;
-  publishedAt: string;
-  score: number;
-  category: "CAPABILITY" | "AUTONOMY" | "SCIENCE" | "SAFETY";
-};
-
-type AgentFeed = {
-  agent: string;
-  status: "online" | "degraded";
-  generatedAt: string;
-  signals: FrontierSignal[];
-};
 
 export default function Home() {
   const scrollRef = useRef<HTMLElement>(null);
@@ -210,7 +195,7 @@ export default function Home() {
                   </div>
                   <div className="origin-stamp">
                     <span>ORIGIN NODE</span>
-                    <b>1956</b>
+                    <b>{milestone.year}</b>
                     <p>{milestone.summary}</p>
                   </div>
                 </div>
@@ -219,9 +204,42 @@ export default function Home() {
                   <p className="micro-label">{milestone.era} / CONTINUOUS SWEEP</p>
                   <h2 id={`${milestone.id}-title`}>{milestone.title}</h2>
                   <p className="section-lede">{milestone.summary}</p>
+                  <div className="agent-readout" aria-label="VECTOR-01 agent state">
+                    <div>
+                      <span>MEMORY</span>
+                      <b>{feed?.mode === "persistent" ? "D1 ONLINE" : "INITIALIZING"}</b>
+                    </div>
+                    <div>
+                      <span>CHANGESET</span>
+                      <b>
+                        {feed
+                          ? `${feed.forecast.newSignals} NEW / ${feed.forecast.updatedSignals} UPDATED`
+                          : "SCANNING"}
+                      </b>
+                    </div>
+                    <div>
+                      <span>NEXT SWEEP</span>
+                      <b>
+                        {feed?.nextSweepAt
+                          ? new Date(feed.nextSweepAt).toLocaleTimeString([], {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })
+                          : "PENDING"}
+                      </b>
+                    </div>
+                    <div className={`agent-readout__pressure is-${feed?.forecast.direction ?? "stable"}`}>
+                      <span>FORECAST PRESSURE</span>
+                      <b>
+                        {feed
+                          ? `${feed.forecast.direction.toUpperCase()} / ${feed.forecast.shiftYears.toFixed(1)}Y`
+                          : "CALCULATING"}
+                      </b>
+                    </div>
+                  </div>
                   <div className="signal-list" aria-live="polite">
                     {feed?.signals.length ? (
-                      feed.signals.slice(0, 4).map((signal, signalIndex) => (
+                      feed.signals.slice(0, 5).map((signal, signalIndex) => (
                         <a
                           href={signal.url}
                           target="_blank"
@@ -231,7 +249,12 @@ export default function Home() {
                         >
                           <span className="signal-row__index">0{signalIndex + 1}</span>
                           <span className="signal-row__body">
-                            <small>{signal.category} / {signal.source}</small>
+                            <small>
+                              <em className={`is-${signal.change.toLowerCase()}`}>
+                                {signal.change}
+                              </em>
+                              {signal.category} / {signal.source}
+                            </small>
                             <b>{signal.title}</b>
                           </span>
                           <span className="signal-row__score">{signal.score}</span>
@@ -246,8 +269,12 @@ export default function Home() {
                     )}
                   </div>
                   <div className="sweep-meta">
-                    <span>SOURCES / OPENAI · GOOGLE AI · ARXIV CS.AI</span>
-                    <span>{feed?.generatedAt ? `LAST SWEEP ${new Date(feed.generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}` : "INITIALIZING"}</span>
+                    <span>SOURCES / OPENAI · GOOGLE AI · ARXIV FRONTIER</span>
+                    <span>
+                      {feed?.generatedAt
+                        ? `LAST SWEEP ${new Date(feed.generatedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })} / ${feed.trigger.toUpperCase()}`
+                        : "INITIALIZING"}
+                    </span>
                   </div>
                 </div>
               ) : index === milestones.length - 1 ? (
@@ -255,7 +282,7 @@ export default function Home() {
                   <p className="micro-label">{milestone.era} / ASSUMPTION ENGINE</p>
                   <h2 id={`${milestone.id}-title`}>{milestone.title}</h2>
                   <p className="section-lede">{milestone.summary}</p>
-                  <ForecastPanel />
+                  <ForecastPanel agentForecast={feed?.forecast} />
                   <footer>
                     <span>AGI / VECTOR</span>
                     <span>PROBABILISTIC · SOURCE-AWARE · AUDITABLE</span>

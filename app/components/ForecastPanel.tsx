@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import type { ForecastPressure } from "../lib/agent-types";
 
 type ForecastInputs = {
   capability: number;
@@ -38,7 +39,11 @@ function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
 }
 
-export function ForecastPanel() {
+export function ForecastPanel({
+  agentForecast,
+}: {
+  agentForecast?: ForecastPressure;
+}) {
   const [inputs, setInputs] = useState<ForecastInputs>({
     capability: 58,
     efficiency: 52,
@@ -50,7 +55,11 @@ export function ForecastPanel() {
       (inputs.capability - 50) * -0.046 +
       (inputs.efficiency - 50) * -0.028 +
       (inputs.reliability - 50) * -0.038;
-    const midpoint = clamp(2033.2 + shift, 2029.2, 2041.5);
+    const midpoint = clamp(
+      2033.2 + shift + (agentForecast?.shiftYears ?? 0),
+      2028.2,
+      2041.5,
+    );
     const uncertainty =
       2.5 + (100 - inputs.reliability) * 0.032 +
       Math.abs(inputs.capability - inputs.efficiency) * 0.012;
@@ -58,7 +67,8 @@ export function ForecastPanel() {
     const latest = Math.round(midpoint + uncertainty);
     const confidence = Math.round(
       clamp(
-        48 + inputs.reliability * 0.24 -
+        48 + inputs.reliability * 0.24 +
+          (agentForecast?.confidenceModifier ?? 0) -
           Math.abs(inputs.capability - inputs.efficiency) * 0.11,
         38,
         72,
@@ -71,12 +81,14 @@ export function ForecastPanel() {
           ? "Cross-domain generalist systems"
           : "Reliable economic agents";
     return { earliest, latest, confidence, phase };
-  }, [inputs]);
+  }, [agentForecast, inputs]);
 
   return (
     <div className="forecast-lab">
       <div className="forecast-lab__result" aria-live="polite">
-        <span className="micro-label">MODEL OUTPUT / V0.8</span>
+        <span className="micro-label">
+          MODEL OUTPUT / V1.0 / {agentForecast ? "AGENT-CALIBRATED" : "BASELINE"}
+        </span>
         <strong>
           {result.earliest}<i>—</i>{result.latest}
         </strong>
@@ -87,6 +99,24 @@ export function ForecastPanel() {
           <div aria-hidden="true">
             <i style={{ width: `${result.confidence}%` }} />
           </div>
+        </div>
+        <div className="forecast-lab__agent">
+          <span>
+            VECTOR-01 EVIDENCE
+            <b>{agentForecast?.evidenceCount ?? 0} SIGNALS</b>
+          </span>
+          <span>
+            LIVE ADJUSTMENT
+            <b>
+              {agentForecast
+                ? `${agentForecast.shiftYears.toFixed(1)} YEARS`
+                : "PENDING"}
+            </b>
+          </span>
+          <p>
+            {agentForecast?.rationale ??
+              "Waiting for the first persistent monitoring sweep."}
+          </p>
         </div>
       </div>
 

@@ -8,8 +8,9 @@ The experience uses a scroll-driven Three.js corridor inspired by the spatial rh
 
 - Scroll-snap 3D timeline with cursor parallax, milestone gates, responsive layouts, keyboard navigation, and reduced-motion support
 - A 28-node chronology spanning Turing's 1950 imitation game, symbolic AI, early robotics, expert systems, deep learning, foundation models, scientific AI, reasoning systems, live frontier monitoring, and the forecast envelope
-- `VECTOR-01`, a server-side signal agent that reads official OpenAI, Google, and arXiv feeds, classifies each item, and assigns a transparent relevance score
-- Interactive scenario model with explicit capability, efficiency, and reliability assumptions
+- `VECTOR-01`, a persistent monitoring agent that reads official OpenAI, Google, and arXiv feeds, detects new or changed evidence, and retains an auditable sweep history in Cloudflare D1
+- A scheduled 30-minute Worker sweep with request-triggered catch-up when a cached snapshot becomes stale
+- An agent-calibrated scenario model that combines live evidence pressure with explicit capability, efficiency, and reliability assumptions
 - Primary-source links, accessible focus states, mobile controls, and an original social preview image
 - Cloudflare-compatible vinext output and Sites deployment metadata
 
@@ -18,12 +19,17 @@ The experience uses a scroll-driven Three.js corridor inspired by the spatial rh
 ```text
 app/
   api/signals/route.ts             Live feed ingestion and signal scoring
+  lib/vector-agent.ts              Collection, change detection, persistence, and forecast pressure
+  lib/agent-types.ts               Shared agent response contract
   components/ForecastPanel.tsx     Interactive forecast assumptions
   components/IntelligenceCorridor.tsx  Three.js scene and camera path
   lib/milestones.ts                Historical timeline data and references
   globals.css                      Visual system, motion, and responsive layouts
   page.tsx                         Experience shell and timeline orchestration
 public/og.png                      Social preview card
+db/schema.ts                       D1 signal and sweep history schema
+drizzle/                           Generated production migration
+worker/index.ts                    HTTP and scheduled Worker handlers
 ```
 
 ## Run locally
@@ -49,15 +55,22 @@ The production build is emitted to `dist/` with a Cloudflare Worker-compatible e
 
 ## Live signal agent
 
-`GET /api/signals` runs a bounded sweep across:
+`VECTOR-01` runs on a 30-minute schedule and performs a request-time catch-up
+when the latest persistent snapshot is stale. Each sweep covers:
 
 - OpenAI News RSS
 - Google Blog RSS
-- arXiv `cs.AI` Atom API
+- arXiv `cs.AI`, `cs.CL`, `cs.LG`, and `cs.RO` Atom API
 
-The agent cleans and normalizes each feed item, classifies it as capability, autonomy, science, or safety, and calculates a simple indicator score. Requests fail independently, so one unavailable source does not take the entire feed offline.
+The agent cleans and normalizes each item, classifies it as capability,
+autonomy, science, or safety, calculates a transparent indicator score, and
+fingerprints the result. D1 preserves first-seen and last-seen timestamps,
+change state, and every forecast sweep. Requests fail independently, so one
+unavailable source does not take the monitor offline.
 
-For higher-volume production monitoring, the same adapters can be moved behind a Cloudflare Cron Trigger, Queue, and D1 history table without changing the interface contract.
+The forecast pressure is deterministic and bounded. It can move the displayed
+scenario window, but every adjustment remains tied to visible evidence counts,
+category pressure, and a stored rationale.
 
 ## Forecast model
 

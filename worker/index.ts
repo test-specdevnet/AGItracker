@@ -1,6 +1,8 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import { runVectorAgent } from "../app/lib/vector-agent";
+import { setRuntimeDb } from "../app/lib/runtime-env";
 
 interface Env {
   ASSETS: Fetcher;
@@ -19,6 +21,11 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
+interface ScheduledController {
+  cron: string;
+  scheduledTime: number;
+}
+
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -27,6 +34,7 @@ interface ExecutionContext {
 
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
+    setRuntimeDb(env.DB);
     const url = new URL(request.url);
 
     if (url.pathname === "/_vinext/image") {
@@ -41,6 +49,15 @@ const worker = {
     }
 
     return handler.fetch(request, env, ctx);
+  },
+  async scheduled(
+    _controller: ScheduledController,
+    env: Env,
+    ctx: ExecutionContext,
+  ): Promise<void> {
+    ctx.waitUntil(
+      runVectorAgent({ db: env.DB, trigger: "scheduled" }).then(() => undefined),
+    );
   },
 };
 
