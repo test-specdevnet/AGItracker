@@ -10,6 +10,7 @@ The experience uses a scroll-driven Three.js corridor inspired by the spatial rh
 - A 28-node chronology spanning Turing's 1950 imitation game, symbolic AI, early robotics, expert systems, deep learning, foundation models, scientific AI, reasoning systems, live frontier monitoring, and the forecast envelope
 - `VECTOR-01`, a persistent monitoring agent that reads official OpenAI, Google, and arXiv feeds, detects new or changed evidence, and retains an auditable sweep history in Cloudflare D1
 - A scheduled 30-minute Worker sweep with request-triggered catch-up when a cached snapshot becomes stale
+- A genuine Cloudflare Pages build with a static application shell and a Pages Function for the live signal API
 - An agent-calibrated scenario model that combines live evidence pressure with explicit capability, efficiency, and reliability assumptions
 - Primary-source links, accessible focus states, mobile controls, and an original social preview image
 - Cloudflare-compatible vinext output and Sites deployment metadata
@@ -30,6 +31,8 @@ public/og.png                      Social preview card
 db/schema.ts                       D1 signal and sweep history schema
 drizzle/                           Generated production migration
 worker/index.ts                    HTTP and scheduled Worker handlers
+functions/api/signals.ts           Cloudflare Pages Function for the live agent
+scripts/build-pages.mjs            Static Pages output generator
 ```
 
 ## Run locally
@@ -51,7 +54,10 @@ npm run build
 node --test tests/rendered-html.test.mjs
 ```
 
-The production build is emitted to `dist/` with a Cloudflare Worker-compatible entry point.
+The production build emits:
+
+- `dist/` for the full Cloudflare Worker/Sites runtime
+- `pages-dist/` for Cloudflare Pages
 
 ## Live signal agent
 
@@ -82,9 +88,35 @@ The forecast lab is deliberately a scenario model, not a promise of an AGI arriv
 
 The model is deterministic, inspectable, and intentionally conservative about confidence.
 
-## Deployment
+## Cloudflare Pages deployment
 
-The repository is configured for the Cloudflare runtime through vinext and the Cloudflare Vite plugin. `.openai/hosting.json` is managed by Sites for production publishing. The same `npm run build` output can be connected to a Cloudflare Pages/Workers pipeline that supports the generated Worker entry point.
+The repository now has a dedicated Pages output and Pages Function. Configure
+the `agitracker` Pages project with:
+
+```text
+Build command: npm run build
+Build output directory: pages-dist
+Root directory: /
+Node.js version: 22
+```
+
+Bind a D1 database to the Pages project with the variable name `DB` to retain
+signal and forecast history. The Function initializes its required tables and
+indexes automatically. Without the binding, VECTOR-01 still runs in ephemeral
+mode so the site and live feed remain available.
+
+For a direct non-interactive deployment:
+
+```bash
+npx wrangler pages deploy pages-dist --config wrangler.pages.toml --project-name agitracker
+```
+
+Cloudflare Pages does not provide cron triggers. The existing Worker entry point
+keeps the scheduled 30-minute sweep available; the Pages Function performs the
+same stale-snapshot catch-up whenever `/api/signals` is requested.
+
+`.openai/hosting.json` remains available for the separate Sites deployment and
+does not affect the Cloudflare Pages output.
 
 ## Responsible use
 

@@ -1,0 +1,10 @@
+name = "agitracker"
+pages_build_output_dir = "./pages-dist"
+compatibility_date = "2026-05-15"
+compatibility_flags = ["nodejs_compat"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "agitracker-vector"
+database_id = "7b194e16-b5e8-410e-add2-2955efa031d1"
+migrations_dir = "drizzle"

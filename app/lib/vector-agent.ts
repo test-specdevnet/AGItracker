@@ -19,6 +19,7 @@ type StoredSignal = FrontierSignal & {
 };
 
 const SWEEP_INTERVAL_MS = 30 * 60 * 1000;
+const schemaInitializers = new WeakMap<object, Promise<void>>();
 
 export const vectorSources: FeedSource[] = [
   {
@@ -37,6 +38,66 @@ export const vectorSources: FeedSource[] = [
     format: "atom",
   },
 ];
+
+export async function ensureAgentSchema(db: D1Database) {
+  const key = db as unknown as object;
+  const existing = schemaInitializers.get(key);
+  if (existing) return existing;
+
+  const initializer = db
+    .batch([
+      db.prepare(
+        `CREATE TABLE IF NOT EXISTS agent_sweeps (
+          id INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
+          trigger TEXT NOT NULL,
+          status TEXT NOT NULL,
+          started_at TEXT NOT NULL,
+          completed_at TEXT NOT NULL,
+          source_count INTEGER NOT NULL,
+          signal_count INTEGER NOT NULL,
+          new_count INTEGER NOT NULL,
+          updated_count INTEGER NOT NULL,
+          shift_years REAL NOT NULL,
+          confidence_modifier INTEGER NOT NULL,
+          direction TEXT NOT NULL,
+          pressure_json TEXT NOT NULL,
+          rationale TEXT NOT NULL
+        )`,
+      ),
+      db.prepare(
+        "CREATE INDEX IF NOT EXISTS agent_sweeps_completed_idx ON agent_sweeps (completed_at)",
+      ),
+      db.prepare(
+        `CREATE TABLE IF NOT EXISTS frontier_signals (
+          id TEXT PRIMARY KEY NOT NULL,
+          fingerprint TEXT NOT NULL,
+          title TEXT NOT NULL,
+          source TEXT NOT NULL,
+          url TEXT NOT NULL,
+          published_at TEXT NOT NULL,
+          score INTEGER NOT NULL,
+          category TEXT NOT NULL,
+          change_state TEXT DEFAULT 'NEW' NOT NULL,
+          first_seen_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL,
+          last_seen_at TEXT DEFAULT CURRENT_TIMESTAMP NOT NULL
+        )`,
+      ),
+      db.prepare(
+        "CREATE INDEX IF NOT EXISTS frontier_signals_published_idx ON frontier_signals (published_at)",
+      ),
+      db.prepare(
+        "CREATE INDEX IF NOT EXISTS frontier_signals_category_idx ON frontier_signals (category)",
+      ),
+    ])
+    .then(() => undefined)
+    .catch((error) => {
+      schemaInitializers.delete(key);
+      throw error;
+    });
+
+  schemaInitializers.set(key, initializer);
+  return initializer;
+}
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(Math.max(value, min), max);
@@ -341,6 +402,7 @@ async function persistSweep(
 export async function loadAgentSnapshot(
   db: D1Database,
 ): Promise<AgentFeed | null> {
+  await ensureAgentSchema(db);
   const sweep = await db
     .prepare(
       `SELECT trigger, status, completed_at, new_count, updated_count,
@@ -447,6 +509,7 @@ export async function runVectorAgent({
     .slice(0, 20);
 
   if (db) {
+    await ensureAgentSchema(db);
     const persisted = await persistSweep(db, signals, trigger, startedAt);
     return {
       agent: "VECTOR-01",
