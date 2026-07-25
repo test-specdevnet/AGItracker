@@ -108,7 +108,7 @@ mode so the site and live feed remain available.
 For a direct non-interactive deployment:
 
 ```bash
-npx wrangler pages deploy pages-dist --config wrangler.pages.toml --project-name agitracker
+npx wrangler pages deploy pages-dist --project-name agitracker
 ```
 
 Cloudflare Pages does not provide cron triggers. The existing Worker entry point
