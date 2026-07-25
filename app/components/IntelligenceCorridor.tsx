@@ -3,12 +3,12 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-const NODE_COUNT = 6;
-const NODE_SPACING = 30;
+const NODE_SPACING = 20;
 
 type IntelligenceCorridorProps = {
   progress: number;
   activeIndex: number;
+  nodeCount: number;
 };
 
 function seededRandom(seed: number) {
@@ -19,6 +19,7 @@ function seededRandom(seed: number) {
 export function IntelligenceCorridor({
   progress,
   activeIndex,
+  nodeCount,
 }: IntelligenceCorridorProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const progressRef = useRef(progress);
@@ -65,8 +66,13 @@ export function IntelligenceCorridor({
     const world = new THREE.Group();
     scene.add(world);
 
+    const worldDepth = Math.max(220, nodeCount * NODE_SPACING + 90);
+    const worldNear = 28;
+    const worldFar = worldNear - worldDepth;
+    const worldCenter = (worldNear + worldFar) / 2;
+
     const floor = new THREE.Mesh(
-      new THREE.PlaneGeometry(80, 220),
+      new THREE.PlaneGeometry(80, worldDepth),
       new THREE.MeshBasicMaterial({
         color: 0x041421,
         transparent: true,
@@ -75,14 +81,14 @@ export function IntelligenceCorridor({
       }),
     );
     floor.rotation.x = -Math.PI / 2;
-    floor.position.set(0, -0.08, -73);
+    floor.position.set(0, -0.08, worldCenter);
     world.add(floor);
 
     const gridPositions: number[] = [];
     for (let x = -34; x <= 34; x += 2) {
-      gridPositions.push(x, 0, 22, x, 0, -182);
+      gridPositions.push(x, 0, worldNear, x, 0, worldFar);
     }
-    for (let z = 22; z >= -182; z -= 4) {
+    for (let z = worldNear; z >= worldFar; z -= 4) {
       gridPositions.push(-34, 0, z, 34, 0, z);
     }
     const gridGeometry = new THREE.BufferGeometry();
@@ -109,10 +115,10 @@ export function IntelligenceCorridor({
     });
     [-5.2, -4.9, 4.9, 5.2].forEach((x) => {
       const rail = new THREE.Mesh(
-        new THREE.BoxGeometry(0.035, 0.026, 210),
+        new THREE.BoxGeometry(0.035, 0.026, worldDepth),
         railMaterial,
       );
-      rail.position.set(x, 0.025, -78);
+      rail.position.set(x, 0.025, worldCenter);
       world.add(rail);
     });
 
@@ -124,25 +130,26 @@ export function IntelligenceCorridor({
     });
     [-8.6, 8.6].forEach((x) => {
       const rail = new THREE.Mesh(
-        new THREE.BoxGeometry(0.045, 0.035, 210),
+        new THREE.BoxGeometry(0.045, 0.035, worldDepth),
         amberMaterial,
       );
-      rail.position.set(x, 0.035, -78);
+      rail.position.set(x, 0.035, worldCenter);
       world.add(rail);
     });
 
     const buildingGeometry = new THREE.BoxGeometry(1, 1, 1);
     const buildingMaterial = new THREE.MeshBasicMaterial({ color: 0x06131d });
+    const buildingCount = Math.min(220, 72 + nodeCount * 5);
     const buildings = new THREE.InstancedMesh(
       buildingGeometry,
       buildingMaterial,
-      92,
+      buildingCount,
     );
     const dummy = new THREE.Object3D();
-    for (let i = 0; i < 92; i += 1) {
+    for (let i = 0; i < buildingCount; i += 1) {
       const side = i % 2 === 0 ? -1 : 1;
       const x = side * (9 + seededRandom(i + 2) * 19);
-      const z = 18 - seededRandom(i + 31) * 198;
+      const z = worldNear - seededRandom(i + 31) * worldDepth;
       const height = 2.5 + seededRandom(i + 71) * 17;
       const width = 0.8 + seededRandom(i + 101) * 3;
       const depth = 0.8 + seededRandom(i + 151) * 4;
@@ -155,10 +162,11 @@ export function IntelligenceCorridor({
     world.add(buildings);
 
     const lightBars = new THREE.Group();
-    for (let i = 0; i < 54; i += 1) {
+    const lightBarCount = Math.min(150, 42 + nodeCount * 4);
+    for (let i = 0; i < lightBarCount; i += 1) {
       const side = i % 2 === 0 ? -1 : 1;
       const x = side * (9.2 + seededRandom(i + 12) * 18);
-      const z = 16 - seededRandom(i + 62) * 195;
+      const z = worldNear - seededRandom(i + 62) * worldDepth;
       const height = 1.5 + seededRandom(i + 92) * 10;
       const light = new THREE.Mesh(
         new THREE.BoxGeometry(0.035, height, 0.035),
@@ -170,11 +178,11 @@ export function IntelligenceCorridor({
     world.add(lightBars);
 
     const nodeGroups: THREE.Group[] = [];
-    for (let i = 0; i < NODE_COUNT; i += 1) {
+    for (let i = 0; i < nodeCount; i += 1) {
       const group = new THREE.Group();
       group.position.set(0, 1.55, -i * NODE_SPACING);
 
-      const isForecast = i === NODE_COUNT - 1;
+      const isForecast = i === nodeCount - 1;
       const color = isForecast ? 0xff7138 : 0x5ce8ff;
       const ringMaterial = new THREE.MeshBasicMaterial({
         color,
@@ -217,7 +225,7 @@ export function IntelligenceCorridor({
       world.add(group);
     }
 
-    for (let i = 0; i < NODE_COUNT - 1; i += 1) {
+    for (let i = 0; i < nodeCount - 1; i += 1) {
       const gate = new THREE.Mesh(
         new THREE.TorusGeometry(7.4, 0.022, 8, 120),
         new THREE.MeshBasicMaterial({
@@ -231,12 +239,13 @@ export function IntelligenceCorridor({
       world.add(gate);
     }
 
-    const particleCount = 900;
+    const particleCount = Math.min(1800, 700 + nodeCount * 40);
     const particlePositions = new Float32Array(particleCount * 3);
     for (let i = 0; i < particleCount; i += 1) {
       particlePositions[i * 3] = (seededRandom(i + 14) - 0.5) * 70;
       particlePositions[i * 3 + 1] = seededRandom(i + 44) * 18;
-      particlePositions[i * 3 + 2] = 25 - seededRandom(i + 84) * 215;
+      particlePositions[i * 3 + 2] =
+        worldNear - seededRandom(i + 84) * worldDepth;
     }
     const particleGeometry = new THREE.BufferGeometry();
     particleGeometry.setAttribute(
@@ -279,7 +288,7 @@ export function IntelligenceCorridor({
     const animate = () => {
       frame = window.requestAnimationFrame(animate);
       const elapsed = clock.getElapsedTime();
-      const travel = progressRef.current * (NODE_COUNT - 1) * NODE_SPACING;
+      const travel = progressRef.current * (nodeCount - 1) * NODE_SPACING;
       const targetZ = 11 - travel;
       const driftX = reduceMotion ? 0 : pointer.x * 1.15;
       const driftY = reduceMotion ? 0 : -pointer.y * 0.42;
@@ -333,7 +342,7 @@ export function IntelligenceCorridor({
       });
       renderer.dispose();
     };
-  }, []);
+  }, [nodeCount]);
 
   return (
     <div className="corridor" aria-hidden="true">

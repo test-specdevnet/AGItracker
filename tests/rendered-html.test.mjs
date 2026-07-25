@@ -31,6 +31,10 @@ test("server-renders the AGI Vector experience", async () => {
   const html = await response.text();
   assert.match(html, /AGI \/ VECTOR/i);
   assert.match(html, /Map the distance to/i);
+  assert.match(html, /28 NODES/i);
+  assert.match(html, /Perceptron/i);
+  assert.match(html, /AlphaFold 3/i);
+  assert.match(html, /Agent platforms/i);
   assert.match(html, /Forecast lab/i);
   assert.doesNotMatch(html, /codex-preview|Your site is taking shape/i);
 });

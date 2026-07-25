@@ -438,18 +438,19 @@ button {
 .timeline-rail {
   position: fixed;
   z-index: 24;
-  top: 50%;
+  top: 112px;
+  bottom: 68px;
   left: 28px;
   display: flex;
   flex-direction: column;
-  gap: 11px;
-  transform: translateY(-48%);
+  justify-content: stretch;
+  gap: 0;
 }
 
 .timeline-rail__track {
   position: absolute;
-  top: 6px;
-  bottom: 6px;
+  top: 1%;
+  bottom: 1%;
   left: 52px;
   width: 1px;
   background: rgba(116, 212, 230, 0.15);
@@ -467,8 +468,9 @@ button {
 .timeline-rail button {
   position: relative;
   display: grid;
+  flex: 1 1 0;
   width: 62px;
-  min-height: 30px;
+  min-height: 9px;
   grid-template-columns: 38px 1fr;
   align-items: center;
   gap: 9px;
@@ -481,6 +483,22 @@ button {
   letter-spacing: 0.08em;
   text-align: right;
   transition: color 180ms ease;
+}
+
+.timeline-rail button span {
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.timeline-rail button.is-anchor span {
+  opacity: 0.46;
+}
+
+.timeline-rail button:hover span,
+.timeline-rail button.is-active span {
+  opacity: 1;
+  transform: translateX(0);
 }
 
 .timeline-rail button i {
@@ -1015,6 +1033,8 @@ a:focus-visible {
   }
 
   .timeline-rail {
+    top: 92px;
+    bottom: 164px;
     left: 14px;
   }
 
@@ -1059,6 +1079,8 @@ a:focus-visible {
   }
 
   .timeline-rail {
+    top: 86px;
+    bottom: 160px;
     left: 7px;
   }
 

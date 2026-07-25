@@ -126,7 +126,11 @@ export default function Home() {
       <a className="skip-link" href="#timeline">
         Skip to timeline
       </a>
-      <IntelligenceCorridor progress={progress} activeIndex={activeIndex} />
+      <IntelligenceCorridor
+        progress={progress}
+        activeIndex={activeIndex}
+        nodeCount={milestones.length}
+      />
 
       <header className="topbar">
         <button className="brand" onClick={() => moveTo(0)} aria-label="Return to origin">
@@ -138,7 +142,13 @@ export default function Home() {
         </button>
         <div className={`agent-status ${feedOnline ? "is-online" : ""}`}>
           <i aria-hidden="true" />
-          <span>{feedOnline ? "VECTOR-01 LIVE" : feedError ? "FEED DEGRADED" : "AGENT SWEEPING"}</span>
+          <span>
+            {feedOnline
+              ? `VECTOR-01 LIVE / ${milestones.length} NODES`
+              : feedError
+                ? `FEED DEGRADED / ${milestones.length} NODES`
+                : `AGENT SWEEPING / ${milestones.length} NODES`}
+          </span>
         </div>
         <button className="forecast-jump" onClick={() => moveTo(milestones.length - 1)}>
           <span>Forecast lab</span>
@@ -153,7 +163,10 @@ export default function Home() {
         {milestones.map((milestone, index) => (
           <button
             key={milestone.id}
-            className={index === activeIndex ? "is-active" : ""}
+            className={[
+              index === activeIndex ? "is-active" : "",
+              milestone.railAnchor ? "is-anchor" : "",
+            ].filter(Boolean).join(" ")}
             onClick={() => moveTo(index)}
             aria-current={index === activeIndex ? "step" : undefined}
             aria-label={`Go to ${milestone.year}: ${milestone.shortTitle}`}
@@ -179,13 +192,15 @@ export default function Home() {
             <div className="timeline-section__content">
               {index === 0 ? (
                 <div className="hero-lockup">
-                  <p className="micro-label">LIVE INTELLIGENCE CARTOGRAPHY / 1956—NEXT</p>
+                  <p className="micro-label">
+                    LIVE INTELLIGENCE CARTOGRAPHY / 1950-NEXT / {milestones.length} NODES
+                  </p>
                   <h1 id={`${milestone.id}-title`}>
                     Map the distance to <span>general intelligence.</span>
                   </h1>
                   <p className="hero-lockup__lede">
-                    Move through the breakthroughs that changed the trajectory of AI,
-                    track today’s frontier signals, then stress-test what comes next.
+                    Move through {milestones.length - 2} documented breakthroughs,
+                    track today&apos;s frontier signals, then stress-test what comes next.
                   </p>
                   <div className="hero-lockup__actions">
                     <button className="primary-action" onClick={() => moveTo(1)}>
@@ -199,7 +214,7 @@ export default function Home() {
                     <p>{milestone.summary}</p>
                   </div>
                 </div>
-              ) : index === 4 ? (
+              ) : milestone.id === "frontier" ? (
                 <div className="frontier-feed">
                   <p className="micro-label">{milestone.era} / CONTINUOUS SWEEP</p>
                   <h2 id={`${milestone.id}-title`}>{milestone.title}</h2>
@@ -248,7 +263,9 @@ export default function Home() {
                 </div>
               ) : (
                 <div className="milestone-lockup">
-                  <p className="micro-label">NODE 0{index + 1} / {milestone.era}</p>
+                  <p className="micro-label">
+                    NODE {String(index + 1).padStart(2, "0")} / {milestone.era}
+                  </p>
                   <div className="milestone-lockup__year">{milestone.year}</div>
                   <h2 id={`${milestone.id}-title`}>{milestone.title}</h2>
                   <p className="section-lede">{milestone.summary}</p>
@@ -266,7 +283,9 @@ export default function Home() {
       <aside className="node-inspector" aria-live="polite">
         <div className="node-inspector__header">
           <span>SELECTED NODE</span>
-          <span>0{activeIndex + 1} / 0{milestones.length}</span>
+          <span>
+            {String(activeIndex + 1).padStart(2, "0")} / {String(milestones.length).padStart(2, "0")}
+          </span>
         </div>
         <div className="node-inspector__year">
           <span>{active.year}</span>

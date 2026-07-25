@@ -7,7 +7,7 @@ The experience uses a scroll-driven Three.js corridor inspired by the spatial rh
 ## What is included
 
 - Scroll-snap 3D timeline with cursor parallax, milestone gates, responsive layouts, keyboard navigation, and reduced-motion support
-- Historical nodes for the Dartmouth workshop, AlexNet, the Transformer, conversational foundation models, and agentic systems
+- A 28-node chronology spanning Turing's 1950 imitation game, symbolic AI, early robotics, expert systems, deep learning, foundation models, scientific AI, reasoning systems, live frontier monitoring, and the forecast envelope
 - `VECTOR-01`, a server-side signal agent that reads official OpenAI, Google, and arXiv feeds, classifies each item, and assigns a transparent relevance score
 - Interactive scenario model with explicit capability, efficiency, and reliability assumptions
 - Primary-source links, accessible focus states, mobile controls, and an original social preview image
