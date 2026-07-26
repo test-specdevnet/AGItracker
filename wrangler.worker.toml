@@ -1,0 +1,25 @@
+name = "agitracker"
+main = "./dist/server/index.js"
+compatibility_date = "2026-05-15"
+compatibility_flags = ["nodejs_compat"]
+no_bundle = true
+
+[[rules]]
+type = "ESModule"
+globs = ["**/*.js", "**/*.mjs"]
+
+[assets]
+directory = "./dist/client"
+binding = "ASSETS"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "agitracker-vector"
+database_id = "7b194e16-b5e8-410e-add2-2955efa031d1"
+migrations_dir = "drizzle"
+
+[triggers]
+crons = ["*/30 * * * *"]
+
+[observability]
+enabled = true

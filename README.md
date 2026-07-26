@@ -10,7 +10,8 @@ The experience uses a scroll-driven Three.js corridor inspired by the spatial rh
 - A 28-node chronology spanning Turing's 1950 imitation game, symbolic AI, early robotics, expert systems, deep learning, foundation models, scientific AI, reasoning systems, live frontier monitoring, and the forecast envelope
 - `VECTOR-01`, a persistent monitoring agent that reads official OpenAI, Google, and arXiv feeds, detects new or changed evidence, and retains an auditable sweep history in Cloudflare D1
 - A scheduled 30-minute Worker sweep with request-triggered catch-up when a cached snapshot becomes stale
-- A genuine Cloudflare Pages build with a static application shell and a Pages Function for the live signal API
+- A canonical Cloudflare Worker deployment that serves the app, live agent API, D1 memory, and scheduled monitoring in one runtime
+- An optional Cloudflare Pages build with a static application shell and a Pages Function for the live signal API
 - An agent-calibrated scenario model that combines live evidence pressure with explicit capability, efficiency, and reliability assumptions
 - Primary-source links, accessible focus states, mobile controls, and an original social preview image
 - Cloudflare-compatible vinext output and Sites deployment metadata
@@ -88,9 +89,28 @@ The forecast lab is deliberately a scenario model, not a promise of an AGI arriv
 
 The model is deterministic, inspectable, and intentionally conservative about confidence.
 
-## Cloudflare Pages deployment
+## Canonical Cloudflare Workers deployment
 
-The repository now has a dedicated Pages output and Pages Function. Configure
+Workers is the primary deployment target for AGI / Vector because it supports
+the complete application in one runtime: the interface, live API, D1 memory,
+and the scheduled VECTOR-01 sweep.
+
+```bash
+npm run deploy:worker
+```
+
+The Worker configuration in `wrangler.worker.toml` binds the
+`agitracker-vector` D1 database as `DB` and schedules a sweep every 30 minutes.
+Apply checked-in migrations before the first deployment:
+
+```bash
+npx wrangler d1 migrations apply agitracker-vector --remote --config wrangler.worker.toml
+```
+
+## Optional Cloudflare Pages deployment
+
+The repository also retains a dedicated Pages output and Pages Function.
+Configure
 the `agitracker` Pages project with:
 
 ```text
@@ -111,9 +131,10 @@ For a direct non-interactive deployment:
 npx wrangler pages deploy pages-dist --project-name agitracker
 ```
 
-Cloudflare Pages does not provide cron triggers. The existing Worker entry point
-keeps the scheduled 30-minute sweep available; the Pages Function performs the
-same stale-snapshot catch-up whenever `/api/signals` is requested.
+Cloudflare Pages does not provide the Worker cron trigger used by VECTOR-01.
+The Pages Function performs a stale-snapshot catch-up whenever `/api/signals`
+is requested, which makes it a useful fallback rather than the canonical
+deployment.
 
 `.openai/hosting.json` remains available for the separate Sites deployment and
 does not affect the Cloudflare Pages output.
