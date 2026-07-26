@@ -3,6 +3,10 @@ import { cp, mkdir, rm, writeFile } from "node:fs/promises";
 const outputDirectory = new URL("../pages-dist/", import.meta.url);
 const clientDirectory = new URL("../dist/client/", import.meta.url);
 const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+const workerDeployRedirect = new URL(
+  "../.wrangler/deploy/config.json",
+  import.meta.url,
+);
 
 workerUrl.searchParams.set("pages-build", Date.now().toString());
 
@@ -54,5 +58,6 @@ await writeFile(
     2,
   )}\n`,
 );
+await rm(workerDeployRedirect, { force: true });
 
 console.log("Cloudflare Pages output written to pages-dist/");
