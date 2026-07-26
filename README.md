@@ -89,17 +89,18 @@ The forecast lab is deliberately a scenario model, not a promise of an AGI arriv
 
 The model is deterministic, inspectable, and intentionally conservative about confidence.
 
-## Canonical Cloudflare Workers deployment
+## Private Cloudflare Worker agent
 
-Workers is the primary deployment target for AGI / Vector because it supports
-the complete application in one runtime: the interface, live API, D1 memory,
-and the scheduled VECTOR-01 sweep.
+The Worker is the canonical VECTOR-01 backend because it supports D1 memory
+and the scheduled sweep. Its identifying `workers.dev` and preview URLs are
+explicitly disabled in `wrangler.worker.toml`; the Worker runs on its cron
+trigger without exposing an account-derived public hostname.
 
 ```bash
 npm run deploy:worker
 ```
 
-The Worker configuration in `wrangler.worker.toml` binds the
+The Worker configuration binds the
 `agitracker-vector` D1 database as `DB` and schedules a sweep every 30 minutes.
 Apply checked-in migrations before the first deployment:
 
@@ -107,10 +108,10 @@ Apply checked-in migrations before the first deployment:
 npx wrangler d1 migrations apply agitracker-vector --remote --config wrangler.worker.toml
 ```
 
-## Optional Cloudflare Pages deployment
+## Public Cloudflare Pages deployment
 
-The repository also retains a dedicated Pages output and Pages Function.
-Configure
+The public interface uses the neutral `agitracker.pages.dev` hostname while the
+private Worker maintains the shared D1 evidence store on schedule. Configure
 the `agitracker` Pages project with:
 
 ```text
@@ -131,10 +132,8 @@ For a direct non-interactive deployment:
 npx wrangler pages deploy pages-dist --project-name agitracker
 ```
 
-Cloudflare Pages does not provide the Worker cron trigger used by VECTOR-01.
 The Pages Function performs a stale-snapshot catch-up whenever `/api/signals`
-is requested, which makes it a useful fallback rather than the canonical
-deployment.
+is requested. The private Worker remains the scheduled monitoring agent.
 
 `.openai/hosting.json` remains available for the separate Sites deployment and
 does not affect the Cloudflare Pages output.
